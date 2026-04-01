@@ -156,6 +156,18 @@ public struct ResourceHandlers: Sendable {
                 ),
             ])
 
+        // --- Available Plugins ---
+        case "logicpro://plugins/available":
+            let plugins = PluginDiscovery.listAvailable()
+            let json = try encoder.encode(plugins)
+            return ReadResource.Result(contents: [
+                .text(
+                    String(data: json, encoding: .utf8) ?? "[]",
+                    uri: uri,
+                    mimeType: "application/json"
+                ),
+            ])
+
         default:
             return errorResult(uri: uri, message: "Unknown resource: \(uri)")
         }

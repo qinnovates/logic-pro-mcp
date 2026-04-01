@@ -26,8 +26,10 @@ let cgevent = await CGEventChannel(config: config)
 let ax = AccessibilityChannel()
 let applescript = await AppleScriptChannel(config: config)
 let osc = await OSCChannel(config: config)
+let scripter = ScripterChannel(config: config)
+await scripter.setup()
 
-let channels: [any Channel] = [coremidi, cgevent, ax, applescript, osc]
+let channels: [any Channel] = [coremidi, cgevent, ax, applescript, osc, scripter]
 
 let router = await ChannelRouter(channels: channels, config: config)
 let cache = StateCache(ttl: await config.stateCacheTTL)

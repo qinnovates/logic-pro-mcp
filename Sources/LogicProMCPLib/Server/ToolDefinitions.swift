@@ -13,7 +13,7 @@ extension LogicProServer {
             navigateTool,
             projectTool,
             systemTool,
-        ]
+        ] + allToolsV2()
     }
 
     // MARK: - Transport

@@ -8,10 +8,11 @@ public actor LogicProServer {
     // MARK: - Properties
 
     private let mcpServer: Server
-    private let router: ChannelRouter
-    private let cache: StateCache
+    let router: ChannelRouter
+    let cache: StateCache
     private let poller: StatePoller
     private let config: ServerConfig
+    let logger: MCPLogger
 
     // MARK: - Init
 
@@ -26,6 +27,9 @@ public actor LogicProServer {
                 through multiple macOS subsystems with automatic fallback.
                 """,
             capabilities: .init(
+                completions: .init(),
+                logging: .init(),
+                prompts: .init(listChanged: true),
                 resources: .init(subscribe: true, listChanged: true),
                 tools: .init(listChanged: true)
             )
@@ -34,22 +38,38 @@ public actor LogicProServer {
         self.cache = cache
         self.poller = poller
         self.config = config
+        self.logger = MCPLogger(name: "logic-pro-mcp")
     }
 
     // MARK: - Start
 
     public func start() async throws {
+        await logger.attach(to: mcpServer)
+        await registerLogging(on: mcpServer)
         await registerTools(on: mcpServer)
         await registerResources(on: mcpServer)
+        await registerPrompts(on: mcpServer)
+        await registerCompletions(on: mcpServer)
 
         let transport = StdioTransport()
         try await mcpServer.start(transport: transport)
 
         await poller.start()
-
-        fputs("[logic-pro-mcp] Server started on stdio\n", stderr)
+        await logger.info("Server started on stdio")
 
         await mcpServer.waitUntilCompleted()
+    }
+
+    // MARK: - Logging Registration
+
+    private func registerLogging(on server: Server) async {
+        let loggerRef = logger
+
+        await server.withMethodHandler(SetLoggingLevel.self) { params in
+            await loggerRef.setMinimumLevel(params.level)
+            await loggerRef.info("Log level set to \(params.level.rawValue)")
+            return Empty()
+        }
     }
 
     // MARK: - Tool Registration
@@ -57,6 +77,7 @@ public actor LogicProServer {
     private func registerTools(on server: Server) async {
         let routerRef = router
         let cacheRef = cache
+        let loggerRef = logger
 
         await server.withMethodHandler(ListTools.self) { _ in
             ListTools.Result(tools: LogicProServer.allTools())
@@ -64,6 +85,13 @@ public actor LogicProServer {
 
         await server.withMethodHandler(CallTool.self) { params in
             let args = params.arguments ?? [:]
+            let action = args["action"]?.stringValue
+
+            // Audit log destructive operations before execution
+            if LogicProServer.isDestructive(tool: params.name, action: action) {
+                let detail = action.map { "\(params.name)/\($0)" } ?? params.name
+                await loggerRef.info("Destructive operation: \(detail)")
+            }
 
             switch params.name {
             case "transport":
@@ -82,6 +110,14 @@ public actor LogicProServer {
                 return try await LogicProServer.handleProject(args: args, router: routerRef)
             case "system":
                 return try await LogicProServer.handleSystem(args: args, router: routerRef, cache: cacheRef)
+            case "audio_analyze":
+                return try await LogicProServer.handleAudioAnalyze(args: args)
+            case "plugin":
+                return try await LogicProServer.handlePlugin(args: args, router: routerRef, cache: cacheRef)
+            case "automation":
+                return try await LogicProServer.handleAutomation(args: args, router: routerRef, cache: cacheRef)
+            case "midi_edit":
+                return try await LogicProServer.handleMIDIEdit(args: args, router: routerRef, cache: cacheRef)
             default:
                 return CallTool.Result(
                     content: [.text("Unknown tool: \(params.name)")],
@@ -95,101 +131,37 @@ public actor LogicProServer {
 
     private func registerResources(on server: Server) async {
         let cacheRef = cache
+        let routerRef = router
 
         await server.withMethodHandler(ListResources.self) { _ in
-            ListResources.Result(resources: [
-                Resource(
-                    name: "transport_state",
-                    uri: "logicpro://state/transport",
-                    title: "Transport State",
-                    description: "Current transport state (play/stop/record, tempo, position)",
-                    mimeType: "application/json"
-                ),
-                Resource(
-                    name: "tracks",
-                    uri: "logicpro://state/tracks",
-                    title: "Track List",
-                    description: "All tracks with name, type, mute/solo/arm, volume, pan",
-                    mimeType: "application/json"
-                ),
-                Resource(
-                    name: "mixer",
-                    uri: "logicpro://state/mixer",
-                    title: "Mixer State",
-                    description: "Channel strips with volume, pan, mute, solo, sends",
-                    mimeType: "application/json"
-                ),
-                Resource(
-                    name: "project",
-                    uri: "logicpro://state/project",
-                    title: "Project Info",
-                    description: "Project metadata (name, sample rate, bit depth, tempo)",
-                    mimeType: "application/json"
-                ),
-                Resource(
-                    name: "health",
-                    uri: "logicpro://system/health",
-                    title: "System Health",
-                    description: "Server health, channel status, permissions",
-                    mimeType: "application/json"
-                ),
-            ])
+            ListResources.Result(resources: ResourceProvider.allResources())
         }
 
+        // Look up the MIDIEngine from the CoreMIDI channel if available
+        // For now pass nil — MIDIEngine is internal to CoreMIDIChannel
         await server.withMethodHandler(ReadResource.self) { params in
-            let encoder = JSONEncoder()
-            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-
-            switch params.uri {
-            case "logicpro://state/transport":
-                let state = await cacheRef.getTransport()
-                let json = try encoder.encode(state)
-                return ReadResource.Result(contents: [
-                    .text(String(data: json, encoding: .utf8) ?? "{}", uri: params.uri, mimeType: "application/json")
-                ])
-
-            case "logicpro://state/tracks":
-                let tracks = await cacheRef.getTracks()
-                let json = try encoder.encode(tracks)
-                return ReadResource.Result(contents: [
-                    .text(String(data: json, encoding: .utf8) ?? "[]", uri: params.uri, mimeType: "application/json")
-                ])
-
-            case "logicpro://state/mixer":
-                let mixer = await cacheRef.getMixer()
-                let json = try encoder.encode(mixer)
-                return ReadResource.Result(contents: [
-                    .text(String(data: json, encoding: .utf8) ?? "{}", uri: params.uri, mimeType: "application/json")
-                ])
-
-            case "logicpro://state/project":
-                let project = await cacheRef.getProject()
-                let json = try encoder.encode(project)
-                return ReadResource.Result(contents: [
-                    .text(String(data: json, encoding: .utf8) ?? "{}", uri: params.uri, mimeType: "application/json")
-                ])
-
-            case "logicpro://system/health":
-                let running = PermissionChecker.isLogicProRunning()
-                let ax = PermissionChecker.checkAccessibility()
-                let age = await cacheRef.cacheAge()
-                let health = SystemHealth(
-                    serverVersion: ServerConfig.serverVersion,
-                    channels: [],
-                    cacheAge: age,
-                    logicProRunning: running,
-                    permissionsOk: ax && running
-                )
-                let json = try encoder.encode(health)
-                return ReadResource.Result(contents: [
-                    .text(String(data: json, encoding: .utf8) ?? "{}", uri: params.uri, mimeType: "application/json")
-                ])
-
-            default:
-                return ReadResource.Result(contents: [
-                    .text("Unknown resource: \(params.uri)", uri: params.uri)
-                ])
-            }
+            try await ResourceHandlers.handleRead(
+                uri: params.uri,
+                cache: cacheRef,
+                router: routerRef,
+                midiEngine: nil
+            )
         }
+    }
+
+    // MARK: - Destructive Operation Detection
+
+    private static let destructiveActions: [String: Set<String>] = [
+        "track": ["delete"],
+        "edit": ["delete", "split"],
+        "project": ["close", "bounce"],
+        "plugin": ["insert", "remove", "set_param", "load_preset"],
+        "automation": ["set_mode", "add_point", "clear"],
+        "midi_edit": ["add_note", "delete_note", "move_note", "set_velocity", "quantize"],
+    ]
+
+    static func isDestructive(tool: String, action: String?) -> Bool {
+        guard let action, let actions = destructiveActions[tool] else { return false }
+        return actions.contains(action)
     }
 }

@@ -64,6 +64,13 @@ public struct ResourceProvider: Sendable {
                 description: "Detailed info for a specific track. Pass 'index' as query parameter.",
                 mimeType: "application/json"
             ),
+            Resource(
+                name: "available_plugins",
+                uri: "logicpro://plugins/available",
+                title: "Available Plugins",
+                description: "All installed Audio Unit plugins (instruments, effects, MIDI processors)",
+                mimeType: "application/json"
+            ),
         ]
     }
 }

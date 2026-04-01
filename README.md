@@ -174,3 +174,4 @@ swift build -c release  # Release build
 ---
 
 <p align="center">Built by <a href="https://github.com/qinnovates">qinnovates</a></p>
+<p align="center"><sub>README template from <a href="https://github.com/qinnovates/repo-design-kit">repo-design-kit</a></sub></p>

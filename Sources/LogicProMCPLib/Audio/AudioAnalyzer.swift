@@ -12,6 +12,8 @@ public struct AudioAnalysisResult: Codable, Sendable {
     public let channelCount: Int
     public let rms: Double            // Root mean square level in dB
     public let peak: Double           // Peak level in dB
+    public let lufsIntegrated: Double // Integrated loudness in LUFS (no K-weighting, ±1 LU for broadband)
+    public let truePeak: Double       // True peak in dBTP (4x cubic Hermite interpolation)
     public let spectralCentroid: Double  // In Hz
     public let frequencyBins: [FrequencyBin]  // Top frequency peaks
 }
@@ -127,6 +129,13 @@ public struct AudioAnalyzer: Sendable {
             sampleRate: sampleRate
         )
 
+        // LUFS (simplified integrated loudness — EBU R128 approximation, no K-weighting)
+        let lufs = LoudnessAnalyzer.calculateLUFS(samplesArray, sampleRate: sampleRate)
+
+        // True peak via 4x oversampling
+        let truePeakLinear = LoudnessAnalyzer.calculateTruePeak(samplesArray)
+        let truePeakDB = linearToDecibels(truePeakLinear)
+
         return AudioAnalysisResult(
             filePath: path,
             duration: duration,
@@ -134,6 +143,8 @@ public struct AudioAnalyzer: Sendable {
             channelCount: channelCount,
             rms: rmsDB,
             peak: peakDB,
+            lufsIntegrated: lufs,
+            truePeak: truePeakDB,
             spectralCentroid: spectralCentroid,
             frequencyBins: frequencyBins
         )

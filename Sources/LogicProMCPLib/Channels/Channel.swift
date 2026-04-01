@@ -23,6 +23,9 @@ public enum ChannelOperation: Sendable {
     case navigate(NavigateOp)
     case project(ProjectOp)
     case system(SystemOp)
+    case plugin(PluginOp)
+    case automation(AutomationOp)
+    case midiEdit(MIDIEditOp)
 }
 
 // MARK: - Transport
@@ -110,6 +113,41 @@ public enum ProjectOp: Sendable {
 public enum SystemOp: Sendable {
     case healthCheck
     case checkPermissions
+}
+
+// MARK: - Plugin
+
+public enum PluginOp: Sendable {
+    case listAvailable
+    case insert(trackIndex: Int, pluginName: String, slotIndex: Int?)
+    case remove(trackIndex: Int, slotIndex: Int)
+    case getParams(trackIndex: Int, slotIndex: Int)
+    case setParam(trackIndex: Int, slotIndex: Int, paramName: String, value: Double)
+    case loadPreset(trackIndex: Int, slotIndex: Int, presetName: String)
+    case listPresets(trackIndex: Int, slotIndex: Int)
+}
+
+// MARK: - Automation
+
+public enum AutomationOp: Sendable {
+    case getMode(trackIndex: Int)
+    case setMode(trackIndex: Int, mode: String)
+    case addPoint(trackIndex: Int, parameter: String, position: String, value: Double, curve: String)
+    case getPoints(trackIndex: Int, parameter: String)
+    case clear(trackIndex: Int, parameter: String)
+    case listParameters(trackIndex: Int)
+}
+
+// MARK: - MIDI Edit
+
+public enum MIDIEditOp: Sendable {
+    case listRegions(trackIndex: Int)
+    case getNotes(trackIndex: Int, regionIndex: Int)
+    case addNote(trackIndex: Int, regionIndex: Int, note: UInt8, velocity: UInt8, position: String, duration: String)
+    case deleteNote(trackIndex: Int, regionIndex: Int, note: UInt8, position: String)
+    case moveNote(trackIndex: Int, regionIndex: Int, note: UInt8, position: String, newNote: UInt8, newPosition: String)
+    case setVelocity(trackIndex: Int, regionIndex: Int, note: UInt8, position: String, velocity: UInt8)
+    case quantize(trackIndex: Int, regionIndex: Int?, quantizeValue: String)
 }
 
 // MARK: - Channel Result

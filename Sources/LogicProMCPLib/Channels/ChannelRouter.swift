@@ -21,14 +21,17 @@ public actor ChannelRouter {
     /// Ordered fallback chains per operation domain.
     /// Channel names must match the `name` property of registered channels.
     private let fallbackChains: [String: [String]] = [
-        "transport": ["CoreMIDI", "CGEvent", "AX"],
-        "track":     ["AX", "CGEvent"],
-        "mixer":     ["OSC", "AX"],
-        "midi":      ["CoreMIDI"],
-        "edit":      ["CGEvent"],
-        "navigate":  ["CGEvent", "AX"],
-        "project":   ["AppleScript", "CGEvent"],
-        "system":    ["Internal"],
+        "transport":  ["CoreMIDI", "Scripter", "CGEvent", "AX"],
+        "track":      ["AX", "CGEvent"],
+        "mixer":      ["OSC", "AX"],
+        "midi":       ["CoreMIDI"],
+        "edit":       ["CGEvent"],
+        "navigate":   ["CGEvent", "AX"],
+        "project":    ["AppleScript", "CGEvent"],
+        "system":     ["Internal"],
+        "plugin":     ["AX", "CGEvent", "AppleScript"],
+        "automation": ["AX", "CGEvent"],
+        "midi_edit":  ["Scripter", "AX", "CGEvent"],
     ]
 
     // MARK: - Init
@@ -147,14 +150,17 @@ public actor ChannelRouter {
 
     private static func domain(for operation: ChannelOperation) -> String {
         switch operation {
-        case .transport: return "transport"
-        case .track:     return "track"
-        case .mixer:     return "mixer"
-        case .midi:      return "midi"
-        case .edit:      return "edit"
-        case .navigate:  return "navigate"
-        case .project:   return "project"
-        case .system:    return "system"
+        case .transport:  return "transport"
+        case .track:      return "track"
+        case .mixer:      return "mixer"
+        case .midi:       return "midi"
+        case .edit:       return "edit"
+        case .navigate:   return "navigate"
+        case .project:    return "project"
+        case .system:     return "system"
+        case .plugin:     return "plugin"
+        case .automation: return "automation"
+        case .midiEdit:   return "midi_edit"
         }
     }
 

@@ -6,7 +6,7 @@ let package = Package(
     name: "LogicProMCP",
     platforms: [.macOS(.v14)],
     dependencies: [
-        .package(url: "https://github.com/modelcontextprotocol/swift-sdk.git", from: "0.12.0"),
+        .package(url: "https://github.com/modelcontextprotocol/swift-sdk.git", .upToNextMinor(from: "0.12.0")),
     ],
     targets: [
         // Library target: all source files except main.swift
