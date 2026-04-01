@@ -62,11 +62,10 @@ struct PluginDiscoveryTests {
         )
     }
 
-    @Test func searchWithEmptyQueryReturnsNone() {
-        // Swift's String.contains("") returns false (Foundation range-based search),
-        // so an empty query matches nothing.
+    @Test func searchWithEmptyQueryReturnsAll() {
+        let allPlugins = PluginDiscovery.listAvailable()
         let searchResult = PluginDiscovery.search(query: "")
-        #expect(searchResult.isEmpty, "Empty query should return no results due to String.contains(\"\") == false")
+        #expect(searchResult.count == allPlugins.count, "Empty query should return all plugins")
     }
 
     @Test func searchIsCaseInsensitive() {

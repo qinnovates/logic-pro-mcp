@@ -73,11 +73,8 @@ struct LoudnessAnalyzerTests {
     }
 
     @Test func truePeakWithEmptyInput() {
-        // calculatePeak uses vDSP_maxv which returns -inf for empty input,
-        // and calculateTruePeak delegates to calculatePeak for count <= 1.
         let truePeak = LoudnessAnalyzer.calculateTruePeak([])
-        #expect(truePeak.isInfinite, "Empty input peak is -inf from vDSP_maxv")
-        #expect(truePeak < 0, "Empty input peak should be negative infinity")
+        #expect(truePeak == 0, "Empty input should return 0")
     }
 
     @Test func truePeakWithSingleSample() {

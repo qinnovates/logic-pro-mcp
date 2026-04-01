@@ -82,6 +82,7 @@ public struct LoudnessAnalyzer: Sendable {
     // MARK: - Helpers
 
     private static func calculatePeak(_ samples: [Float]) -> Float {
+        guard !samples.isEmpty else { return 0 }
         var result: Float = 0
         var absBuffer = [Float](repeating: 0, count: samples.count)
         vDSP_vabs(samples, 1, &absBuffer, 1, vDSP_Length(samples.count))

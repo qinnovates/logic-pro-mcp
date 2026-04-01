@@ -34,7 +34,9 @@ public struct PluginDiscovery: Sendable {
     }
 
     /// Search available plugins by name (case-insensitive partial match).
+    /// Empty query returns all plugins.
     public static func search(query: String) -> [AvailablePlugin] {
+        guard !query.isEmpty else { return listAvailable() }
         let lowered = query.lowercased()
         return listAvailable().filter {
             $0.name.lowercased().contains(lowered) ||
