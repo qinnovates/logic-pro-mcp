@@ -1,0 +1,37 @@
+{
+  "transport": {
+    "play": {"keyCode": 49, "modifiers": []},
+    "stop": {"keyCode": 49, "modifiers": []},
+    "record": {"keyCode": 15, "modifiers": []},
+    "pause": {"keyCode": 49, "modifiers": []},
+    "rewind": {"keyCode": 43, "modifiers": []},
+    "forward": {"keyCode": 47, "modifiers": []},
+    "toggleCycle": {"keyCode": 8, "modifiers": []},
+    "toggleMetronome": {"keyCode": 42, "modifiers": ["command"]}
+  },
+  "edit": {
+    "undo": {"keyCode": 6, "modifiers": ["command"]},
+    "redo": {"keyCode": 6, "modifiers": ["command", "shift"]},
+    "copy": {"keyCode": 8, "modifiers": ["command"]},
+    "paste": {"keyCode": 9, "modifiers": ["command"]},
+    "delete": {"keyCode": 51, "modifiers": []},
+    "quantize": {"keyCode": 12, "modifiers": ["option"]},
+    "split": {"keyCode": 1, "modifiers": ["command"]},
+    "join": {"keyCode": 38, "modifiers": ["command"]},
+    "selectAll": {"keyCode": 0, "modifiers": ["command"]}
+  },
+  "navigate": {
+    "zoom_in": {"keyCode": 24, "modifiers": ["command"]},
+    "zoom_out": {"keyCode": 27, "modifiers": ["command"]},
+    "show_mixer": {"keyCode": 7, "modifiers": []},
+    "show_editor": {"keyCode": 14, "modifiers": []},
+    "show_automation": {"keyCode": 0, "modifiers": []}
+  },
+  "project": {
+    "new": {"keyCode": 45, "modifiers": ["command"]},
+    "save": {"keyCode": 1, "modifiers": ["command"]},
+    "open": {"keyCode": 31, "modifiers": ["command"]},
+    "close": {"keyCode": 13, "modifiers": ["command"]},
+    "bounce": {"keyCode": 11, "modifiers": ["command"]}
+  }
+}

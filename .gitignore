@@ -1,0 +1,33 @@
+# Build
+.build/
+*.xcodeproj/
+xcuserdata/
+DerivedData/
+
+# Swift Package Manager
+.swiftpm/
+Package.resolved
+
+# macOS
+.DS_Store
+._*
+
+# Memory (private session state)
+_memory/
+
+# Audio samples (test fixtures)
+audio-import/
+
+# Secrets / credentials
+.env
+.env.*
+*.pem
+*.key
+credentials.*
+*secret*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*~
